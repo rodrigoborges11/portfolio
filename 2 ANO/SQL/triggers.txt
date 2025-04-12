@@ -1,0 +1,58 @@
+triggers:
+CREATE OR REPLACE FUNCTION create_bill_after_appointment()
+RETURNS TRIGGER AS $$
+DECLARE
+    new_bill_id BIGINT;
+BEGIN
+    -- Obter o maior billid existente e incrementar para o novo ID
+    SELECT COALESCE(MAX(billid), 0) + 1 INTO new_bill_id FROM bill;
+
+    -- Inserir um novo registro na tabela bill com o new_bill_id
+    INSERT INTO bill (billid, cost, payed) VALUES (new_bill_id, 1000, FALSE);
+
+    -- Relacionar a nova fatura ao agendamento
+    INSERT INTO appointments_bill (appointments_appointmentid, bill_billid) VALUES (NEW.appointmentid, new_bill_id);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Gatilho que chama a função create_bill_after_appointment após a inserção de um novo agendamento
+CREATE OR REPLACE TRIGGER trigger_create_bill_after_appointment
+AFTER INSERT ON appointments
+FOR EACH ROW
+EXECUTE FUNCTION create_bill_after_appointment();
+--------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION update_hospitalization_bill()
+RETURNS TRIGGER AS $$
+DECLARE
+    new_bill_id INTEGER;
+BEGIN
+    -- Verificar se a hospitalização já possui uma fatura
+    IF EXISTS (SELECT 1 FROM bill_hospitalization WHERE hospitalization_hospid = NEW.hospitalization_hospid) THEN
+        -- Atualizar o custo da fatura existente para incluir o custo da cirurgia (1000)
+        UPDATE bill
+        SET cost = cost + 1000
+        WHERE billid = (SELECT bill_billid FROM bill_hospitalization WHERE hospitalization_hospid = NEW.hospitalization_hospid);
+    ELSE
+        -- Obter o próximo ID de fatura
+        SELECT COALESCE(MAX(billid), 0) + 1 INTO new_bill_id FROM bill;
+
+        -- Criar uma nova fatura (bill) para a hospitalização
+        INSERT INTO bill (billid, cost,payed)
+        VALUES (new_bill_id, 1000,FALSE);
+
+        -- Relacionar a fatura com a hospitalização na tabela bill_hospitalization
+        INSERT INTO bill_hospitalization (bill_billid, hospitalization_hospid)
+        VALUES (new_bill_id, NEW.hospitalization_hospid);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER surgery_after_insert_trigger
+AFTER INSERT ON surgery
+FOR EACH ROW
+EXECUTE FUNCTION update_hospitalization_bill();

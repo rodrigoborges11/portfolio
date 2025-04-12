@@ -1,0 +1,223 @@
+CREATE TABLE employees (
+	user_data_id_user BIGINT,
+	PRIMARY KEY(user_data_id_user)
+);
+
+CREATE TABLE hospitalization (
+	hospid				 SERIAL,
+	responsiblenurse			 VARCHAR(512) NOT NULL,
+	date_start				 TIMESTAMP NOT NULL,
+	date_end				 TIMESTAMP NOT NULL,
+	nurses_employees_user_data_id_user	 BIGINT NOT NULL,
+	patient_user_data_id_user		 BIGINT NOT NULL,
+	assistants_employees_user_data_id_user BIGINT NOT NULL,
+	PRIMARY KEY(hospid)
+);
+
+CREATE TABLE specialization (
+	specname	 VARCHAR(512) NOT NULL,
+	parentspec VARCHAR(512),
+	PRIMARY KEY(specname)
+);
+
+CREATE TABLE assistants (
+	employees_user_data_id_user BIGINT,
+	PRIMARY KEY(employees_user_data_id_user)
+);
+
+CREATE TABLE nurses (
+	category_categoryid	 BIGINT NOT NULL,
+	employees_user_data_id_user BIGINT,
+	PRIMARY KEY(employees_user_data_id_user)
+);
+
+CREATE TABLE patient (
+	user_data_id_user BIGINT,
+	PRIMARY KEY(user_data_id_user)
+);
+
+CREATE TABLE bill (
+	billid SERIAL,
+	cost	 BIGINT NOT NULL,
+	payed	 BOOL NOT NULL,
+	PRIMARY KEY(billid)
+);
+
+CREATE TABLE medicine (
+	medicineid SERIAL,
+	name	 VARCHAR(512) NOT NULL,
+	PRIMARY KEY(medicineid)
+);
+
+CREATE TABLE prescriptions (
+	presciptionsid	 SERIAL,
+	date_prescription TIMESTAMP NOT NULL,
+	validity		 TIMESTAMP NOT NULL,
+	PRIMARY KEY(presciptionsid)
+);
+
+CREATE TABLE surgery (
+	surgeryid				 BIGSERIAL,
+	type				 VARCHAR(512) NOT NULL,
+	date_surgery			 TIMESTAMP NOT NULL,
+	doctor_employees_user_data_id_user BIGINT NOT NULL,
+	hospitalization_hospid		 INTEGER NOT NULL,
+	PRIMARY KEY(surgeryid)
+);
+
+CREATE TABLE appointments (
+	appointmentid			 BIGSERIAL,
+	date_app				 TIMESTAMP NOT NULL,
+	doctor_employees_user_data_id_user BIGINT NOT NULL,
+	patient_user_data_id_user		 BIGINT NOT NULL,
+	PRIMARY KEY(appointmentid)
+);
+
+CREATE TABLE sideeffects (
+	effectid SERIAL,
+	nome	 VARCHAR(512) NOT NULL,
+	PRIMARY KEY(effectid)
+);
+
+CREATE TABLE gravity (
+	gravity_id		 SERIAL,
+	probability		 FLOAT(8) NOT NULL,
+	severity		 INTEGER NOT NULL,
+	sideeffects_effectid INTEGER,
+	medicine_medicineid	 INTEGER,
+	PRIMARY KEY(gravity_id,sideeffects_effectid,medicine_medicineid)
+);
+
+CREATE TABLE user_data (
+	id_user	 BIGSERIAL,
+	username	 VARCHAR(512) NOT NULL,
+	password	 VARCHAR(512) NOT NULL,
+	address	 VARCHAR(512) NOT NULL,
+	phone_number VARCHAR(512) NOT NULL,
+	PRIMARY KEY(id_user)
+);
+
+CREATE TABLE category (
+	categoryid BIGSERIAL,
+	name	 VARCHAR(512) NOT NULL,
+	PRIMARY KEY(categoryid)
+);
+
+CREATE TABLE dose (
+	amount			 BIGINT NOT NULL,
+	duration			 BIGINT NOT NULL,
+	prescriptions_presciptionsid INTEGER,
+	medicine_medicineid		 INTEGER,
+	PRIMARY KEY(prescriptions_presciptionsid,medicine_medicineid)
+);
+
+CREATE TABLE doctor (
+	licenseid			 BIGINT NOT NULL,
+	employees_user_data_id_user BIGINT,
+	PRIMARY KEY(employees_user_data_id_user)
+);
+
+CREATE TABLE payment (
+	payment_id	 BIGSERIAL,
+	amount	 BIGINT NOT NULL,
+	method	 VARCHAR(512) NOT NULL,
+	payment_date TIMESTAMP NOT NULL,
+	bill_billid	 INTEGER,
+	PRIMARY KEY(payment_id,bill_billid)
+);
+
+CREATE TABLE doctor_specialization (
+	doctor_employees_user_data_id_user BIGINT,
+	specialization_specname		 VARCHAR(512),
+	PRIMARY KEY(doctor_employees_user_data_id_user,specialization_specname)
+);
+
+CREATE TABLE surgery_nurses (
+	surgery_surgeryid			 BIGINT,
+	nurses_employees_user_data_id_user BIGINT,
+	PRIMARY KEY(surgery_surgeryid,nurses_employees_user_data_id_user)
+);
+
+CREATE TABLE appointments_nurses (
+	appointments_appointmentid	 BIGINT,
+	nurses_employees_user_data_id_user BIGINT,
+	PRIMARY KEY(appointments_appointmentid,nurses_employees_user_data_id_user)
+);
+
+CREATE TABLE appointments_prescriptions (
+	appointments_appointmentid	 BIGINT,
+	prescriptions_presciptionsid INTEGER NOT NULL,
+	PRIMARY KEY(appointments_appointmentid)
+);
+
+CREATE TABLE category_category (
+	category_categoryid	 BIGINT,
+	category_categoryid1 BIGINT NOT NULL,
+	PRIMARY KEY(category_categoryid)
+);
+
+CREATE TABLE appointments_bill (
+	appointments_appointmentid BIGINT NOT NULL,
+	bill_billid		 INTEGER,
+	PRIMARY KEY(bill_billid)
+);
+
+CREATE TABLE bill_hospitalization (
+	bill_billid		 INTEGER,
+	hospitalization_hospid INTEGER,
+	PRIMARY KEY(bill_billid,hospitalization_hospid)
+);
+
+CREATE TABLE specialization_specialization (
+	specialization_specname	 VARCHAR(512),
+	specialization_specname1 VARCHAR(512) NOT NULL,
+	PRIMARY KEY(specialization_specname)
+);
+
+CREATE TABLE hospitalization_prescriptions (
+	hospitalization_hospid	 INTEGER NOT NULL,
+	prescriptions_presciptionsid INTEGER,
+	PRIMARY KEY(prescriptions_presciptionsid)
+);
+
+ALTER TABLE employees ADD CONSTRAINT employees_fk1 FOREIGN KEY (user_data_id_user) REFERENCES user_data(id_user);
+ALTER TABLE hospitalization ADD CONSTRAINT hospitalization_fk1 FOREIGN KEY (nurses_employees_user_data_id_user) REFERENCES nurses(employees_user_data_id_user);
+ALTER TABLE hospitalization ADD CONSTRAINT hospitalization_fk2 FOREIGN KEY (patient_user_data_id_user) REFERENCES patient(user_data_id_user);
+ALTER TABLE hospitalization ADD CONSTRAINT hospitalization_fk3 FOREIGN KEY (assistants_employees_user_data_id_user) REFERENCES assistants(employees_user_data_id_user);
+ALTER TABLE assistants ADD CONSTRAINT assistants_fk1 FOREIGN KEY (employees_user_data_id_user) REFERENCES employees(user_data_id_user);
+ALTER TABLE nurses ADD CONSTRAINT nurses_fk1 FOREIGN KEY (category_categoryid) REFERENCES category(categoryid);
+ALTER TABLE nurses ADD CONSTRAINT nurses_fk2 FOREIGN KEY (employees_user_data_id_user) REFERENCES employees(user_data_id_user);
+ALTER TABLE patient ADD CONSTRAINT patient_fk1 FOREIGN KEY (user_data_id_user) REFERENCES user_data(id_user);
+ALTER TABLE surgery ADD CONSTRAINT surgery_fk1 FOREIGN KEY (doctor_employees_user_data_id_user) REFERENCES doctor(employees_user_data_id_user);
+ALTER TABLE surgery ADD CONSTRAINT surgery_fk2 FOREIGN KEY (hospitalization_hospid) REFERENCES hospitalization(hospid);
+ALTER TABLE appointments ADD CONSTRAINT appointments_fk1 FOREIGN KEY (doctor_employees_user_data_id_user) REFERENCES doctor(employees_user_data_id_user);
+ALTER TABLE appointments ADD CONSTRAINT appointments_fk2 FOREIGN KEY (patient_user_data_id_user) REFERENCES patient(user_data_id_user);
+ALTER TABLE gravity ADD CONSTRAINT gravity_fk1 FOREIGN KEY (sideeffects_effectid) REFERENCES sideeffects(effectid);
+ALTER TABLE gravity ADD CONSTRAINT gravity_fk2 FOREIGN KEY (medicine_medicineid) REFERENCES medicine(medicineid);
+ALTER TABLE user_data ADD UNIQUE (phone_number);
+ALTER TABLE category ADD UNIQUE (name);
+ALTER TABLE dose ADD CONSTRAINT dose_fk1 FOREIGN KEY (prescriptions_presciptionsid) REFERENCES prescriptions(presciptionsid);
+ALTER TABLE dose ADD CONSTRAINT dose_fk2 FOREIGN KEY (medicine_medicineid) REFERENCES medicine(medicineid);
+ALTER TABLE doctor ADD UNIQUE (licenseid);
+ALTER TABLE doctor ADD CONSTRAINT doctor_fk1 FOREIGN KEY (employees_user_data_id_user) REFERENCES employees(user_data_id_user);
+ALTER TABLE payment ADD CONSTRAINT payment_fk1 FOREIGN KEY (bill_billid) REFERENCES bill(billid);
+ALTER TABLE doctor_specialization ADD CONSTRAINT doctor_specialization_fk1 FOREIGN KEY (doctor_employees_user_data_id_user) REFERENCES doctor(employees_user_data_id_user);
+ALTER TABLE doctor_specialization ADD CONSTRAINT doctor_specialization_fk2 FOREIGN KEY (specialization_specname) REFERENCES specialization(specname);
+ALTER TABLE surgery_nurses ADD CONSTRAINT surgery_nurses_fk1 FOREIGN KEY (surgery_surgeryid) REFERENCES surgery(surgeryid);
+ALTER TABLE surgery_nurses ADD CONSTRAINT surgery_nurses_fk2 FOREIGN KEY (nurses_employees_user_data_id_user) REFERENCES nurses(employees_user_data_id_user);
+ALTER TABLE appointments_nurses ADD CONSTRAINT appointments_nurses_fk1 FOREIGN KEY (appointments_appointmentid) REFERENCES appointments(appointmentid);
+ALTER TABLE appointments_nurses ADD CONSTRAINT appointments_nurses_fk2 FOREIGN KEY (nurses_employees_user_data_id_user) REFERENCES nurses(employees_user_data_id_user);
+ALTER TABLE appointments_prescriptions ADD UNIQUE (prescriptions_presciptionsid);
+ALTER TABLE appointments_prescriptions ADD CONSTRAINT appointments_prescriptions_fk1 FOREIGN KEY (appointments_appointmentid) REFERENCES appointments(appointmentid);
+ALTER TABLE appointments_prescriptions ADD CONSTRAINT appointments_prescriptions_fk2 FOREIGN KEY (prescriptions_presciptionsid) REFERENCES prescriptions(presciptionsid);
+ALTER TABLE category_category ADD CONSTRAINT category_category_fk1 FOREIGN KEY (category_categoryid) REFERENCES category(categoryid);
+ALTER TABLE category_category ADD CONSTRAINT category_category_fk2 FOREIGN KEY (category_categoryid1) REFERENCES category(categoryid);
+ALTER TABLE appointments_bill ADD CONSTRAINT appointments_bill_fk1 FOREIGN KEY (appointments_appointmentid) REFERENCES appointments(appointmentid);
+ALTER TABLE appointments_bill ADD CONSTRAINT appointments_bill_fk2 FOREIGN KEY (bill_billid) REFERENCES bill(billid);
+ALTER TABLE bill_hospitalization ADD CONSTRAINT bill_hospitalization_fk1 FOREIGN KEY (bill_billid) REFERENCES bill(billid);
+ALTER TABLE bill_hospitalization ADD CONSTRAINT bill_hospitalization_fk2 FOREIGN KEY (hospitalization_hospid) REFERENCES hospitalization(hospid);
+ALTER TABLE specialization_specialization ADD CONSTRAINT specialization_specialization_fk1 FOREIGN KEY (specialization_specname) REFERENCES specialization(specname);
+ALTER TABLE specialization_specialization ADD CONSTRAINT specialization_specialization_fk2 FOREIGN KEY (specialization_specname1) REFERENCES specialization(specname);
+ALTER TABLE hospitalization_prescriptions ADD CONSTRAINT hospitalization_prescriptions_fk1 FOREIGN KEY (hospitalization_hospid) REFERENCES hospitalization(hospid);
+ALTER TABLE hospitalization_prescriptions ADD CONSTRAINT hospitalization_prescriptions_fk2 FOREIGN KEY (prescriptions_presciptionsid) REFERENCES prescriptions(presciptionsid);
+
